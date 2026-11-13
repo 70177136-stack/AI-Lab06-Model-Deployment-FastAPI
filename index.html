@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Diabetes Risk Predictor — Mohsin Raza (70177136)</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --border: #e2e8f0;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 30px 20px;
+    }
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 14px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--border);
+    }
+    .header { text-align: center; margin-bottom: 24px; }
+    .header h2 { color: #0f172a; font-size: 24px; margin-bottom: 6px; }
+    .author-badge {
+      display: inline-block;
+      background: #eff6ff;
+      color: var(--primary);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+    .sample-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .sample-btn {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px dashed var(--border);
+      background: #f1f5f9;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .sample-btn:hover {
+      background: #e2e8f0;
+      border-color: #cbd5e1;
+    }
+    .form-group { margin-bottom: 14px; }
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: #334155;
+    }
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+    .predict-btn {
+      width: 100%;
+      padding: 12px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+    .predict-btn:hover { background: var(--primary-hover); }
+    .result-box {
+      margin-top: 24px;
+      padding: 18px;
+      border-radius: 10px;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    .result-diabetic {
+      background: #fef2f2;
+      border: 1.5px solid #fecaca;
+      color: #991b1b;
+    }
+    .result-healthy {
+      background: #ecfdf5;
+      border: 1.5px solid #a7f3d0;
+      color: #065f46;
+    }
+    .result-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .prob-bar-container {
+      width: 100%;
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin-top: 10px;
+    }
+    .prob-bar {
+      height: 100%;
+      background: var(--primary);
+      transition: width 0.5s ease;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">
+      <span class="author-badge">Mohsin Raza • SAP 70177136 • UOL</span>
+      <h2>Clinical Diabetes Predictor</h2>
+      <p style="font-size: 13px; color: #64748b;">FastAPI ML Inference Service</p>
+    </div>
+
+    <div class="sample-buttons">
+      <button class="sample-btn" onclick="fillSample(false)">Fill Healthy Patient</button>
+      <button class="sample-btn" onclick="fillSample(true)">Fill Diabetic Patient</button>
+    </div>
+
+    <form id="predictionForm" onsubmit="event.preventDefault(); predict();">
+      <div class="form-group">
+        <label for="Glucose">Plasma Glucose (mg/dL)</label>
+        <input id="Glucose" type="number" step="any" required placeholder="e.g. 112">
+      </div>
+      <div class="form-group">
+        <label for="BloodPressure">Diastolic Blood Pressure (mm Hg)</label>
+        <input id="BloodPressure" type="number" step="any" required placeholder="e.g. 74">
+      </div>
+      <div class="form-group">
+        <label for="Insulin">2-Hour Serum Insulin (mu U/ml)</label>
+        <input id="Insulin" type="number" step="any" required placeholder="e.g. 94">
+      </div>
+      <div class="form-group">
+        <label for="BMI">Body Mass Index (BMI)</label>
+        <input id="BMI" type="number" step="any" required placeholder="e.g. 28.5">
+      </div>
+      <div class="form-group">
+        <label for="DiabetesPedigreeFunction">Diabetes Pedigree Genetic Score</label>
+        <input id="DiabetesPedigreeFunction" type="number" step="any" required placeholder="e.g. 0.35">
+      </div>
+      <div class="form-group">
+        <label for="Age">Patient Age (Years)</label>
+        <input id="Age" type="number" step="any" required placeholder="e.g. 35">
+      </div>
+
+      <button type="submit" class="predict-btn" id="submitBtn">Run ML Diagnostic Prediction</button>
+    </form>
+
+    <div id="resultBox" class="result-box">
+      <div class="result-title" id="resultTitle">Prediction Result</div>
+      <div id="resultDetails" style="font-size: 14px;"></div>
+      <div class="prob-bar-container">
+        <div id="probBar" class="prob-bar" style="width: 0%;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "http://localhost:8000/predict";
+    const fields = ["Glucose", "BloodPressure", "Insulin", "BMI", "DiabetesPedigreeFunction", "Age"];
+
+    function fillSample(isDiabetic) {
+      if (isDiabetic) {
+        document.getElementById("Glucose").value = 168.0;
+        document.getElementById("BloodPressure").value = 88.0;
+        document.getElementById("Insulin").value = 180.0;
+        document.getElementById("BMI").value = 38.2;
+        document.getElementById("DiabetesPedigreeFunction").value = 0.785;
+        document.getElementById("Age").value = 52.0;
+      } else {
+        document.getElementById("Glucose").value = 95.0;
+        document.getElementById("BloodPressure").value = 68.0;
+        document.getElementById("Insulin").value = 45.0;
+        document.getElementById("BMI").value = 22.4;
+        document.getElementById("DiabetesPedigreeFunction").value = 0.210;
+        document.getElementById("Age").value = 26.0;
+      }
+    }
+
+    async function predict() {
+      const data = {};
+      for (const f of fields) {
+        const val = document.getElementById(f).value;
+        if (val === "") { alert("Please complete field: " + f); return; }
+        data[f] = parseFloat(val);
+      }
+
+      const btn = document.getElementById("submitBtn");
+      btn.innerText = "Evaluating...";
+      btn.disabled = true;
+
+      const resBox = document.getElementById("resultBox");
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data)
+        });
+
+        if (!response.ok) throw new Error("Server error: " + response.statusText);
+        const res = await response.json();
+
+        resBox.style.display = "block";
+        const isDiabetic = res.predicted_label === 1;
+
+        resBox.className = "result-box " + (isDiabetic ? "result-diabetic" : "result-healthy");
+        document.getElementById("resultTitle").innerText = (isDiabetic ? "⚠️ " : "✅ ") + res.prediction;
+        document.getElementById("resultDetails").innerHTML = 
+          "<strong>Estimated Probability:</strong> " + res.probability_percentage + 
+          " &nbsp;|&nbsp; <strong>Risk Tier:</strong> " + res.risk_level;
+
+        const probPct = Math.round(res.probability * 100);
+        const bar = document.getElementById("probBar");
+        bar.style.width = probPct + "%";
+        bar.style.backgroundColor = isDiabetic ? "#ef4444" : "#10b981";
+
+      } catch (err) {
+        resBox.style.display = "block";
+        resBox.className = "result-box result-diabetic";
+        document.getElementById("resultTitle").innerText = "Connection Alert";
+        document.getElementById("resultDetails").innerText = "Unable to reach FastAPI server. Ensure uvicorn is running on port 8000.";
+      } finally {
+        btn.innerText = "Run ML Diagnostic Prediction";
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
